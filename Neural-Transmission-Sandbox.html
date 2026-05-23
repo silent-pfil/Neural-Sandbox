@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Neural Transmission Sandbox</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --bg:#020810;
+  --surface:#040d1a;
+  --border:rgba(40,160,255,0.14);
+  --accent:#28a0ff;
+  --accent2:#ffd060;
+  --accent3:#a060ff;
+  --accent4:#40ffb0;
+  --text:#cce8ff;
+  --text-dim:rgba(204,232,255,0.4);
+  --mono:'DM Mono',monospace;
+  --display:'Orbitron',sans-serif;
+  --glow:rgba(40,160,255,0.12);
+  --glow2:rgba(255,208,96,0.1);
+  --na-color:#ffd060;
+  --k-color:#40a0ff;
+  --cl-color:#40ffb0;
+  --depol:#fff5cc;
+  --repol:#1a4a8a;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--mono);
+  min-height:100vh;
+  overflow-x:hidden;
+  transition:background 0.5s,color 0.5s;
+}
+
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);
+  pointer-events:none;z-index:999;
+}
+
+/* ── HEADER ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 20px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;
+  background:rgba(2,8,16,0.96);
+  backdrop-filter:blur(14px);
+  z-index:100;gap:8px;flex-wrap:wrap;
+}
+.header-left{display:flex;flex-direction:column;gap:2px;}
+.header-title{
+  font-family:var(--display);font-size:13px;font-weight:700;
+  letter-spacing:0.18em;color:var(--accent);white-space:nowrap;
+  text-shadow:0 0 25px rgba(40,160,255,0.5);
+}
+.header-sub{font-size:7.5px;color:var(--text-dim);letter-spacing:0.22em;}
+.tier-nav{display:flex;gap:3px;flex-wrap:wrap;}
+.tier-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text-dim);font-family:var(--mono);font-size:10px;
+  padding:5px 10px;cursor:pointer;transition:all 0.2s;letter-spacing:0.1em;
+}
+.tier-btn:hover,.tier-btn.active{
+  border-color:var(--accent);color:var(--accent);
+  background:var(--glow);box-shadow:0 0 12px rgba(40,160,255,0.2);
+}
+.void-btn{
+  background:none;border:1px solid var(--border);color:var(--text-dim);
+  font-family:var(--mono);font-size:10px;padding:5px 10px;
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.1em;
+}
+.void-btn:hover{border-color:var(--text-dim);color:var(--text);}
+
+.tier{display:none;min-height:calc(100vh - 58px);}
+.tier.active{display:block;}
+
+/* ── SHARED PANEL STYLES ── */
+.side-panel{
+  padding:18px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:12px;
+}
+.side-panel::-webkit-scrollbar{width:3px;}
+.side-panel::-webkit-scrollbar-thumb{background:var(--border);}
+
+.info-sec{border:1px solid var(--border);padding:14px;}
+.info-sec-title{
+  font-family:var(--display);font-size:10px;font-weight:700;
+  letter-spacing:0.18em;color:var(--accent);margin-bottom:11px;
+}
+.info-row{margin-bottom:8px;}
+.info-label{font-size:7.5px;color:var(--text-dim);letter-spacing:0.2em;margin-bottom:3px;}
+.info-text{font-size:9px;color:var(--text);line-height:1.9;}
+.info-why{
+  border:1px solid rgba(40,160,255,0.2);padding:12px;
+  background:rgba(40,160,255,0.03);margin-top:10px;
+}
+.info-why .info-label{color:var(--accent);}
+.info-why .info-text{color:rgba(204,232,255,0.85);}
+
+.ctrl-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.ctrl-label{font-size:8.5px;color:var(--text);width:110px;flex-shrink:0;letter-spacing:0.04em;}
+.ctrl-val{font-size:8.5px;color:var(--accent);width:44px;text-align:right;flex-shrink:0;}
+input[type=range]{
+  -webkit-appearance:none;flex:1;height:2px;
+  background:rgba(255,255,255,0.08);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:11px;height:11px;
+  background:var(--accent);border-radius:50%;cursor:pointer;
+  box-shadow:0 0 6px var(--accent);
+}
+
+.tog-row{display:flex;margin-bottom:9px;}
+.tog-btn{
+  flex:1;padding:7px 4px;background:none;
+  border:1px solid var(--border);color:var(--text-dim);
+  font-family:var(--mono);font-size:8.5px;cursor:pointer;
+  letter-spacing:0.06em;transition:all 0.2s;text-align:center;
+}
+.tog-btn:not(:last-child){border-right:none;}
+.tog-btn.active{background:var(--glow);color:var(--accent);border-color:var(--accent);}
+
+.action-btn{
+  width:100%;padding:10px;background:none;
+  border:1px solid var(--border);color:var(--text-dim);
+  font-family:var(--mono);font-size:9px;cursor:pointer;
+  letter-spacing:0.1em;transition:all 0.2s;text-align:center;
+  margin-bottom:6px;
+}
+.action-btn:hover{background:var(--glow);color:var(--accent);border-color:var(--accent);}
+.action-btn.fire{border-color:var(--accent2);color:var(--accent2);}
+.action-btn.fire:hover{background:var(--glow2);}
+
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.data-cell{border:1px solid var(--border);padding:9px;}
+.data-cell-label{font-size:7.5px;color:var(--text-dim);letter-spacing:0.15em;margin-bottom:3px;}
+.data-cell-val{font-size:13px;color:var(--accent);}
+
+/* ══════════════════════════════════════
+   TIER I — THE NEURON
+══════════════════════════════════════ */
+.t1-layout{
+  display:grid;grid-template-columns:1fr 300px;
+  height:calc(100vh - 58px);
+}
+.t1-canvas-wrap{
+  position:relative;overflow:hidden;
+  border-right:1px solid var(--border);
+  cursor:crosshair;
+  background:radial-gradient(ellipse at 30% 50%,rgba(40,160,255,0.04) 0%,transparent 70%);
+}
+#t1Canvas{width:100%;height:100%;display:block;}
+.t1-hint{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  font-size:8px;color:var(--text-dim);letter-spacing:0.15em;
+  background:rgba(2,8,16,0.8);padding:5px 12px;border:1px solid var(--border);
+  pointer-events:none;white-space:nowrap;
+}
+.membrane-potential{
+  position:absolute;top:14px;left:14px;
+  font-size:8px;letter-spacing:0.15em;color:var(--text-dim);
+  background:rgba(2,8,16,0.8);padding:8px 12px;border:1px solid var(--border);
+}
+.mp-val{font-size:18px;color:var(--accent2);font-family:var(--display);}
+
+/* ══════════════════════════════════════
+   TIER II — ACTION POTENTIAL
+══════════════════════════════════════ */
+.t2-layout{
+  display:grid;grid-template-columns:1fr 320px;
+  height:calc(100vh - 58px);
+}
+.t2-canvas-wrap{
+  position:relative;overflow:hidden;
+  border-right:1px solid var(--border);
+  background:#020810;
+}
+#t2Canvas{width:100%;height:100%;display:block;}
+
+.t2-overlay{
+  position:absolute;top:14px;left:14px;right:14px;
+  display:flex;justify-content:space-between;
+  pointer-events:none;flex-wrap:wrap;gap:6px;
+}
+.t2-badge{
+  font-size:8px;letter-spacing:0.15em;color:var(--text-dim);
+  background:rgba(2,8,16,0.85);padding:5px 10px;border:1px solid var(--border);
+}
+.t2-badge.active{border-color:var(--accent2);color:var(--accent2);}
+
+/* AP voltage graph */
+.ap-graph{
+  position:absolute;bottom:0;left:0;right:0;
+  height:120px;border-top:1px solid var(--border);
+  background:rgba(2,8,16,0.9);
+  pointer-events:none;
+}
+#apGraphCanvas{width:100%;height:100%;display:block;}
+
+/* ══════════════════════════════════════
+   TIER III — THE SYNAPSE
+══════════════════════════════════════ */
+.t3-layout{
+  display:grid;grid-template-columns:1fr 320px;
+  height:calc(100vh - 58px);
+}
+.t3-canvas-wrap{
+  position:relative;overflow:hidden;
+  border-right:1px solid var(--border);
+}
+#t3Canvas{width:100%;height:100%;display:block;}
+.t3-cleft-label{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:8px;color:var(--text-dim);letter-spacing:0.18em;
+  pointer-events:none;text-align:center;line-height:2;
+  background:rgba(2,8,16,0.7);padding:4px 8px;border:1px solid var(--border);
+}
+
+/* ══════════════════════════════════════
+   TIER IV — THE NETWORK
+══════════════════════════════════════ */
+.t4-layout{
+  display:grid;grid-template-columns:1fr 300px;
+  height:calc(100vh - 58px);
+}
+.t4-canvas-wrap{
+  position:relative;overflow:hidden;
+  border-right:1px solid var(--border);
+  cursor:crosshair;
+}
+#t4Canvas{width:100%;height:100%;display:block;}
+
+.coherence-meter{
+  position:absolute;top:14px;left:14px;right:14px;
+}
+.cm-label{font-size:8px;letter-spacing:0.18em;color:var(--text-dim);margin-bottom:4px;display:flex;justify-content:space-between;}
+.cm-label span{color:var(--accent);}
+.cm-bar-bg{height:8px;background:rgba(255,255,255,0.05);border:1px solid var(--border);overflow:hidden;}
+.cm-bar-fill{height:100%;transition:width 0.4s,background 0.4s;}
+
+.t4-hint{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  font-size:8px;color:var(--text-dim);letter-spacing:0.15em;
+  background:rgba(2,8,16,0.8);padding:5px 12px;border:1px solid var(--border);
+  pointer-events:none;white-space:nowrap;
+}
+
+.t4-log{border:1px solid var(--border);padding:12px;max-height:160px;overflow-y:auto;}
+.t4-log::-webkit-scrollbar{width:3px;}
+.t4-log::-webkit-scrollbar-thumb{background:var(--border);}
+.t4-log-title{font-size:7.5px;color:var(--text-dim);letter-spacing:0.2em;margin-bottom:8px;}
+.log-e{font-size:8px;color:var(--text-dim);line-height:1.9;border-bottom:1px solid rgba(40,160,255,0.04);padding-bottom:3px;margin-bottom:3px;}
+.log-e.fire{color:var(--accent2);}
+.log-e.good{color:var(--accent4);}
+.log-e.warn{color:#ff8060;}
+
+/* ION LEGEND */
+.ion-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.ion-dot{display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-dim);}
+.ion-circle{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .t1-layout,.t2-layout,.t3-layout,.t4-layout{
+    grid-template-columns:1fr;grid-template-rows:55vh auto;height:auto;
+  }
+  .t1-canvas-wrap,.t2-canvas-wrap,.t3-canvas-wrap,.t4-canvas-wrap{
+    border-right:none;border-bottom:1px solid var(--border);
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-title">NEURAL TRANSMISSION</div>
+    <div class="header-sub">THE SIGNAL THAT MAKES YOU · YOU</div>
+  </div>
+  <nav class="tier-nav">
+    <button class="tier-btn active" onclick="setTier(1)">TIER I</button>
+    <button class="tier-btn" onclick="setTier(2)">TIER II</button>
+    <button class="tier-btn" onclick="setTier(3)">TIER III</button>
+    <button class="tier-btn" onclick="setTier(4)">TIER IV</button>
+  </nav>
+  <button class="void-btn" id="voidBtn" onclick="toggleVoid()">☽ VOID</button>
+</header>
+
+<!-- ══ TIER I — THE NEURON ══ -->
+<div class="tier active" id="tier1">
+  <div class="t1-layout">
+    <div class="t1-canvas-wrap">
+      <canvas id="t1Canvas"></canvas>
+      <div class="membrane-potential">
+        <div style="font-size:7.5px;letter-spacing:0.2em;color:var(--text-dim);margin-bottom:2px;">RESTING POTENTIAL</div>
+        <div class="mp-val">−70 mV</div>
+        <div style="font-size:7.5px;color:var(--text-dim);margin-top:4px;letter-spacing:0.1em;">Na⁺ out · K⁺ in · ready</div>
+      </div>
+      <div class="t1-hint">CLICK ANY STRUCTURE TO EXPLORE</div>
+    </div>
+    <div class="side-panel" id="t1Panel">
+      <div style="font-family:var(--display);font-size:22px;font-weight:900;letter-spacing:0.1em;color:var(--accent);line-height:1.1;text-shadow:0 0 20px rgba(40,160,255,0.3);">THE<br>NEURON</div>
+      <div style="font-size:8.5px;color:var(--text-dim);letter-spacing:0.12em;line-height:2;">
+        86 billion of these in your brain.<br>
+        Each one a living wire.<br>
+        Each one waiting for a signal<br>
+        worth passing on.<br><br>
+        Click any structure.<br>
+        Everything has a reason<br>
+        for looking exactly like it does.
+      </div>
+      <div id="t1StructureCards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TIER II — ACTION POTENTIAL ══ -->
+<div class="tier" id="tier2">
+  <div class="t2-layout">
+    <div class="t2-canvas-wrap">
+      <canvas id="t2Canvas"></canvas>
+      <div class="t2-overlay">
+        <div class="t2-badge" id="t2StatusBadge">RESTING · −70 mV</div>
+        <div class="t2-badge" id="t2SpeedBadge">CONDUCTION: —</div>
+        <div class="t2-badge" id="t2LawBadge">ALL-OR-NOTHING LAW</div>
+      </div>
+      <div class="ap-graph"><canvas id="apGraphCanvas"></canvas></div>
+    </div>
+    <div class="side-panel">
+      <div class="info-sec">
+        <div class="info-sec-title">THE ACTION POTENTIAL</div>
+        <div style="font-size:8.5px;color:var(--text-dim);line-height:1.9;letter-spacing:0.04em;">
+          When input exceeds threshold, the membrane fires. Every time. Fully. The signal doesn't get stronger with more stimulus. It fires or it doesn't.
+        </div>
+        <div class="ion-legend">
+          <div class="ion-dot"><div class="ion-circle" style="background:var(--na-color)"></div>Na⁺ SODIUM</div>
+          <div class="ion-dot"><div class="ion-circle" style="background:var(--k-color)"></div>K⁺ POTASSIUM</div>
+          <div class="ion-dot"><div class="ion-circle" style="background:var(--cl-color)"></div>Cl⁻ CHLORIDE</div>
+        </div>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">STIMULUS</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">STRENGTH</div>
+          <input type="range" id="t2Stim" min="0" max="100" value="0" step="1" oninput="updateT2Stim()">
+          <div class="ctrl-val" id="t2StimVal">0</div>
+        </div>
+        <div style="font-size:8px;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:10px;" id="t2ThresholdNote">
+          Threshold: 55 · Below threshold: no signal
+        </div>
+        <button class="action-btn fire" onclick="fireT2()">▶ FIRE STIMULUS</button>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">CONDITIONS</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">MYELINATION</div>
+          <input type="range" id="t2Myelin" min="0" max="100" value="100" step="1" oninput="updateT2Conditions()">
+          <div class="ctrl-val" id="t2MyelinVal">100%</div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">TEMPERATURE</div>
+          <input type="range" id="t2Temp" min="20" max="42" value="37" step="0.5" oninput="updateT2Conditions()">
+          <div class="ctrl-val" id="t2TempVal">37°C</div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Na⁺ CHANNELS</div>
+          <input type="range" id="t2NaCh" min="0" max="100" value="100" step="1" oninput="updateT2Conditions()">
+          <div class="ctrl-val" id="t2NaChVal">100%</div>
+        </div>
+        <div style="font-size:8px;color:var(--text-dim);line-height:1.8;margin-top:6px;" id="t2ConditionNote">
+          Normal conditions. Full myelination. Body temperature. All channels open.
+        </div>
+      </div>
+      <div class="data-grid">
+        <div class="data-cell"><div class="data-cell-label">VELOCITY</div><div class="data-cell-val" id="d2Vel">—</div></div>
+        <div class="data-cell"><div class="data-cell-label">PEAK mV</div><div class="data-cell-val" id="d2Peak">—</div></div>
+        <div class="data-cell"><div class="data-cell-label">DURATION</div><div class="data-cell-val" id="d2Dur">—</div></div>
+        <div class="data-cell"><div class="data-cell-label">REFRACTORY</div><div class="data-cell-val" id="d2Ref">—</div></div>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">KEY PRINCIPLES</div>
+        <div style="font-size:8.5px;color:var(--text-dim);line-height:2;letter-spacing:0.04em;">
+          <span style="color:var(--accent2)">All-or-Nothing:</span> Signal fires fully or not at all. Stronger stimulus does not mean stronger signal.<br><br>
+          <span style="color:var(--accent2)">Saltatory Conduction:</span> Myelinated axons jump signal node to node — up to 100x faster.<br><br>
+          <span style="color:var(--accent2)">Refractory Period:</span> Brief window after firing where the axon cannot re-fire. Signal travels one direction only.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TIER III — THE SYNAPSE ══ -->
+<div class="tier" id="tier3">
+  <div class="t3-layout">
+    <div class="t3-canvas-wrap">
+      <canvas id="t3Canvas"></canvas>
+    </div>
+    <div class="side-panel">
+      <div class="info-sec">
+        <div class="info-sec-title">THE SYNAPTIC CLEFT</div>
+        <div style="font-size:8.5px;color:var(--text-dim);line-height:1.9;">
+          20 nanometers wide.<br>
+          Your entire emotional life<br>happens in this gap.
+        </div>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">NEUROTRANSMITTER</div>
+        <div class="tog-row">
+          <button class="tog-btn active" id="ntGlu" onclick="setNT('glutamate')">GLUT</button>
+          <button class="tog-btn" id="ntGaba" onclick="setNT('gaba')">GABA</button>
+          <button class="tog-btn" id="ntDopa" onclick="setNT('dopamine')">DOPA</button>
+          <button class="tog-btn" id="ntSero" onclick="setNT('serotonin')">SERO</button>
+        </div>
+        <div style="font-size:8.5px;color:var(--text-dim);line-height:1.9;border:1px solid var(--border);padding:10px;" id="ntDesc">
+          <span style="color:var(--accent)">GLUTAMATE</span> — Primary excitatory. Fires the next neuron. Learning and memory depend on it. Found at most synapses.
+        </div>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">REUPTAKE</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">PUMP ACTIVITY</div>
+          <input type="range" id="t3Reuptake" min="0" max="100" value="80" step="1" oninput="updateT3()">
+          <div class="ctrl-val" id="t3ReuptakeVal">80%</div>
+        </div>
+        <div style="font-size:8px;color:var(--text-dim);line-height:1.8;" id="t3ReuptakeNote">
+          Normal reuptake. Neurotransmitters cleared efficiently.
+        </div>
+        <div class="info-why" style="margin-top:8px;">
+          <div class="info-label">SSRI MECHANISM</div>
+          <div class="info-text">Reduce reuptake to 0–20%. Serotonin lingers in the cleft. Signal strength and duration increase. This is the exact mechanism of every SSRI antidepressant ever made.</div>
+        </div>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">SIGNAL</div>
+        <button class="action-btn fire" onclick="fireT3()">▶ RELEASE VESICLES</button>
+        <div class="ctrl-row" style="margin-top:8px;">
+          <div class="ctrl-label">RECEPTOR SENSITIVITY</div>
+          <input type="range" id="t3RecSens" min="10" max="200" value="100" step="5" oninput="updateT3()">
+          <div class="ctrl-val" id="t3RecSensVal">100%</div>
+        </div>
+        <div style="font-size:8px;color:var(--text-dim);line-height:1.8;margin-top:4px;" id="t3SensNote">
+          Normal sensitivity. Baseline receptor response.
+        </div>
+      </div>
+      <div class="data-grid">
+        <div class="data-cell"><div class="data-cell-label">CLEFT WIDTH</div><div class="data-cell-val">20 nm</div></div>
+        <div class="data-cell"><div class="data-cell-label">NT IN CLEFT</div><div class="data-cell-val" id="d3NT">0</div></div>
+        <div class="data-cell"><div class="data-cell-label">POST POTENTIAL</div><div class="data-cell-val" id="d3Post">−70 mV</div></div>
+        <div class="data-cell"><div class="data-cell-label">SIGNAL TYPE</div><div class="data-cell-val" id="d3Type">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TIER IV — THE NETWORK ══ -->
+<div class="tier" id="tier4">
+  <div class="t4-layout">
+    <div class="t4-canvas-wrap">
+      <canvas id="t4Canvas"></canvas>
+      <div class="coherence-meter">
+        <div class="cm-label">SIGNAL COHERENCE <span id="t4CoherenceVal">—</span></div>
+        <div class="cm-bar-bg"><div class="cm-bar-fill" id="t4CoherenceFill" style="width:0%"></div></div>
+      </div>
+      <div class="t4-hint">CLICK NEURON TO STIMULATE · DRAG TO PAN</div>
+    </div>
+    <div class="side-panel">
+      <div class="info-sec">
+        <div class="info-sec-title">NETWORK</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">NEURON COUNT</div>
+          <input type="range" id="t4Count" min="10" max="80" value="35" step="5" oninput="rebuildT4()">
+          <div class="ctrl-val" id="t4CountVal">35</div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">CONNECTIVITY</div>
+          <input type="range" id="t4Connect" min="1" max="8" value="3" step="1" oninput="rebuildT4()">
+          <div class="ctrl-val" id="t4ConnectVal">3</div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">INHIBITORY %</div>
+          <input type="range" id="t4Inhib" min="0" max="50" value="20" step="5" oninput="rebuildT4()">
+          <div class="ctrl-val" id="t4InhibVal">20%</div>
+        </div>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">ACTIONS</div>
+        <button class="action-btn fire" onclick="t4StimAll()">▶ STIMULATE RANDOM</button>
+        <button class="action-btn" onclick="t4Strengthen()">⬆ STRENGTHEN PATHWAY</button>
+        <button class="action-btn" onclick="t4Weaken()">⬇ WEAKEN PATHWAY</button>
+        <button class="action-btn" onclick="t4Damage()">✕ DAMAGE NEURON</button>
+        <button class="action-btn" onclick="t4Reset()">↺ REBUILD NETWORK</button>
+      </div>
+      <div class="info-sec">
+        <div class="info-sec-title">PLASTICITY</div>
+        <div style="font-size:8.5px;color:var(--text-dim);line-height:1.9;letter-spacing:0.04em;">
+          <span style="color:var(--accent)">Hebbian Rule:</span><br>
+          Neurons that fire together wire together. Strengthen a pathway by firing it repeatedly. Watch the connection thicken.<br><br>
+          <span style="color:var(--accent)">Use it or lose it:</span><br>
+          Starve a pathway and it weakens. This is how memory fades and skills atrophy.
+        </div>
+      </div>
+      <div class="data-grid">
+        <div class="data-cell"><div class="data-cell-label">NEURONS</div><div class="data-cell-val" id="d4Neurons">35</div></div>
+        <div class="data-cell"><div class="data-cell-label">CONNECTIONS</div><div class="data-cell-val" id="d4Conns">—</div></div>
+        <div class="data-cell"><div class="data-cell-label">ACTIVE</div><div class="data-cell-val" id="d4Active">0</div></div>
+        <div class="data-cell"><div class="data-cell-label">INHIBITORY</div><div class="data-cell-val" id="d4Inhib">—</div></div>
+      </div>
+      <div class="t4-log">
+        <div class="t4-log-title">NEURAL EVENT LOG</div>
+        <div id="t4LogEntries"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  TIER I — THE NEURON
+// ============================================================
+const T1_STRUCTURES=[
+  {id:'dendrites',name:'DENDRITES',color:'#28a0ff',
+   fn:'Branching receivers. Collect incoming signals from thousands of other neurons. The more branches, the more inputs the neuron can integrate.',
+   why:'The tree-like branching maximizes surface area for incoming synaptic contacts — the same logic as lung alveoli and intestinal villi. More surface area means more signal integration. The shape is the function.'},
+  {id:'soma',name:'CELL BODY (SOMA)',color:'#a060ff',
+   fn:'Integration center. Sums all incoming signals from dendrites. If total input exceeds threshold, fires an action potential down the axon.',
+   why:'The soma is roughly spherical because it is an integration processor — input comes from all directions via dendrites, output goes one direction via the axon. The shape reflects the computation.'},
+  {id:'axon',name:'AXON HILLOCK',color:'#ffd060',
+   fn:'Decision point. Where the action potential is initiated. The narrowest part of the neuron — where the threshold decision is made.',
+   why:'The hillock is the location with the highest density of voltage-gated sodium channels in the neuron. This is by design — it is where the all-or-nothing decision happens. Concentrated channels means a lower effective threshold.'},
+  {id:'myelin',name:'MYELIN SHEATH',color:'#40ffb0',
+   fn:'Insulation layer. Speeds signal transmission dramatically. Produced by oligodendrocytes. Missing in some neurodegenerative diseases.',
+   why:'Myelin exists because evolution needed faster signals without thicker axons. A bare axon 1mm thick conducts at 1 m/s. A myelinated axon 1mm thick conducts at 70 m/s. The insulation allows saltatory conduction — signal jumps between nodes of Ranvier rather than traveling continuously.'},
+  {id:'nodes',name:'NODES OF RANVIER',color:'#ff8060',
+   fn:'Gaps in the myelin where ion exchange occurs. The signal regenerates here. Between nodes the signal travels passively at near-light speed.',
+   why:'The gaps are precisely spaced to maintain signal strength. Too far apart and the signal degrades between them. Too close and the speed advantage is lost. The spacing is an evolved optimization.'},
+  {id:'terminal',name:'SYNAPTIC TERMINALS',color:'#ff60a0',
+   fn:'Signal release points. Contain vesicles packed with neurotransmitters. When the action potential arrives, vesicles fuse with the membrane and release neurotransmitters into the synaptic cleft.',
+   why:'The bulb shape maximizes vesicle storage capacity near the release zone. The terminal is essentially a precision chemical delivery system that evolved to release exactly the right amount of signal molecule in response to an electrical event.'},
+  {id:'nucleus',name:'NUCLEUS',color:'#64b5f6',
+   fn:'Genetic control center. Contains the DNA instructions for building and maintaining every protein the neuron needs. Directs repair, growth, and plasticity.',
+   why:'Neurons are among the longest-lived cells in the body — many survive for an entire lifetime. The nucleus must maintain protein production continuously. Neurons also have unusually high metabolic demands, requiring constant genetic oversight.'},
+];
+
+let t1cvs,t1ctx,t1raf,t1Time=0;
+let t1Active=null;
+
+function initT1(){
+  t1cvs=document.getElementById('t1Canvas');
+  t1ctx=t1cvs.getContext('2d');
+  resizeT1(); window.addEventListener('resize',resizeT1);
+  buildT1Panel();
+  t1cvs.addEventListener('click',e=>{
+    const r=t1cvs.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const hit=hitT1Structure(mx,my);
+    t1Active=hit?( hit===t1Active?null:hit ):null;
+    updateT1Panel();
+  });
+  if(!t1raf) animateT1();
+}
+function resizeT1(){
+  if(!t1cvs) return;
+  const p=t1cvs.parentElement;
+  t1cvs.width=p.offsetWidth*devicePixelRatio; t1cvs.height=p.offsetHeight*devicePixelRatio;
+  t1ctx.scale(devicePixelRatio,devicePixelRatio);
+}
+
+function buildT1Panel(){
+  const c=document.getElementById('t1StructureCards');
+  c.innerHTML='';
+  T1_STRUCTURES.forEach(s=>{
+    const d=document.createElement('div');
+    d.className='info-sec'; d.id='t1c-'+s.id;
+    d.style.cursor='pointer'; d.style.borderColor=s.id===t1Active?s.color:'var(--border)';
+    d.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:0;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+      <div style="font-size:9px;letter-spacing:0.12em;color:${s.id===t1Active?s.color:'var(--text)'};">${s.name}</div>
+    </div>
+    <div id="t1d-${s.id}" style="display:${s.id===t1Active?'block':'none'};margin-top:10px;">
+      <div class="info-row"><div class="info-label">FUNCTION</div><div class="info-text">${s.fn}</div></div>
+      <div class="info-why"><div class="info-label">WHY THIS SHAPE</div><div class="info-text">${s.why}</div></div>
+    </div>`;
+    d.addEventListener('click',()=>{
+      t1Active=t1Active===s.id?null:s.id;
+      updateT1Panel();
+    });
+    c.appendChild(d);
+  });
+}
+
+function updateT1Panel(){
+  T1_STRUCTURES.forEach(s=>{
+    const card=document.getElementById('t1c-'+s.id);
+    const detail=document.getElementById('t1d-'+s.id);
+    if(!card||!detail) return;
+    const on=t1Active===s.id;
+    card.style.borderColor=on?s.color:'var(--border)';
+    card.querySelector('div>div:last-child').style.color=on?s.color:'var(--text)';
+    detail.style.display=on?'block':'none';
+  });
+}
+
+function hitT1Structure(mx,my){
+  const W=t1cvs.offsetWidth,H=t1cvs.offsetHeight;
+  const CX=W*0.15, CY=H*0.5;
+  // Approximate hit zones
+  const zones=[
+    {id:'dendrites',x:CX-80,y:CY,r:70},
+    {id:'soma',x:CX,y:CY,r:30},
+    {id:'axon',x:CX+45,y:CY,r:20},
+    {id:'myelin',x:CX+180,y:CY,r:50},
+    {id:'nodes',x:CX+160,y:CY,r:20},
+    {id:'terminal',x:W*0.9,y:CY,r:25},
+    {id:'nucleus',x:CX-5,y:CY,r:16},
+  ];
+  let best=null,bestD=99999;
+  zones.forEach(z=>{
+    const d=Math.hypot(mx-z.x,my-z.y);
+    if(d<z.r&&d<bestD){bestD=d;best=z.id;}
+  });
+  return best;
+}
+
+function drawT1(){
+  if(!t1ctx) return;
+  const W=t1cvs.offsetWidth,H=t1cvs.offsetHeight;
+  if(!W||!H) return;
+  t1ctx.clearRect(0,0,W,H);
+  const bg=getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#020810';
+  t1ctx.fillStyle=bg; t1ctx.fillRect(0,0,W,H);
+
+  const CX=W*0.15, CY=H*0.5;
+  const t=t1Time;
+  const axonEnd=W*0.88;
+
+  // Background neural glow
+  const radg=t1ctx.createRadialGradient(W*0.5,CY,0,W*0.5,CY,W*0.45);
+  radg.addColorStop(0,'rgba(40,160,255,0.04)'); radg.addColorStop(1,'transparent');
+  t1ctx.fillStyle=radg; t1ctx.fillRect(0,0,W,H);
+
+  // ── DENDRITES
+  const dendAngles=[-1.3,-0.9,-0.5,0.5,0.9,1.3,-1.7,1.7];
+  dendAngles.forEach((a,i)=>{
+    const len=50+30*Math.sin(i*1.3);
+    const isActive=t1Active==='dendrites';
+    t1ctx.save();
+    t1ctx.strokeStyle=isActive?'rgba(40,160,255,0.9)':`rgba(40,160,255,${0.35+0.15*Math.sin(t*0.8+i)})`;
+    t1ctx.lineWidth=isActive?2.5:1.8;
+    t1ctx.shadowColor='#28a0ff'; t1ctx.shadowBlur=isActive?14:6;
+    t1ctx.beginPath();
+    t1ctx.moveTo(CX-20,CY);
+    const ex=CX-20+Math.cos(a-Math.PI)*len;
+    const ey=CY+Math.sin(a-Math.PI)*len;
+    t1ctx.bezierCurveTo(CX-20+Math.cos(a-Math.PI)*len*0.4,CY+Math.sin(a-Math.PI)*len*0.4+Math.sin(t+i)*5,
+      ex+Math.cos(a-Math.PI+0.3)*20,ey+Math.sin(a-Math.PI+0.3)*20,ex,ey);
+    t1ctx.stroke();
+    // Branch tips
+    t1ctx.beginPath();
+    t1ctx.moveTo(ex,ey);
+    t1ctx.lineTo(ex+Math.cos(a-Math.PI+0.4)*18,ey+Math.sin(a-Math.PI+0.4)*18);
+    t1ctx.strokeStyle=isActive?'rgba(40,160,255,0.7)':'rgba(40,160,255,0.25)';
+    t1ctx.lineWidth=1; t1ctx.stroke();
+    t1ctx.restore();
+  });
+
+  // ── SOMA
+  const somaR=28+1.5*Math.sin(t*1.1);
+  const isActiveSoma=t1Active==='soma';
+  t1ctx.save();
+  t1ctx.beginPath(); t1ctx.arc(CX,CY,somaR,0,Math.PI*2);
+  const sg=t1ctx.createRadialGradient(CX-8,CY-8,0,CX,CY,somaR);
+  sg.addColorStop(0,'rgba(100,60,200,0.8)');
+  sg.addColorStop(0.6,'rgba(70,40,160,0.6)');
+  sg.addColorStop(1,'rgba(40,20,120,0.4)');
+  t1ctx.fillStyle=sg; t1ctx.fill();
+  t1ctx.shadowColor='#a060ff'; t1ctx.shadowBlur=isActiveSoma?22:10;
+  t1ctx.strokeStyle=isActiveSoma?'rgba(160,96,255,0.95)':'rgba(160,96,255,0.55)';
+  t1ctx.lineWidth=isActiveSoma?2.5:1.5; t1ctx.stroke(); t1ctx.shadowBlur=0;
+  t1ctx.restore();
+
+  // ── NUCLEUS inside soma
+  const isActiveNuc=t1Active==='nucleus';
+  t1ctx.save();
+  t1ctx.beginPath(); t1ctx.ellipse(CX-3,CY,12,10,0.2,0,Math.PI*2);
+  t1ctx.fillStyle=isActiveNuc?'rgba(100,181,246,0.7)':'rgba(100,181,246,0.45)';
+  t1ctx.fill();
+  t1ctx.shadowColor='#64b5f6'; t1ctx.shadowBlur=isActiveNuc?14:5;
+  t1ctx.strokeStyle='rgba(144,202,249,0.6)'; t1ctx.lineWidth=1; t1ctx.stroke(); t1ctx.shadowBlur=0;
+  t1ctx.restore();
+
+  // ── AXON HILLOCK
+  const isActiveHillock=t1Active==='axon';
+  t1ctx.save();
+  t1ctx.beginPath();
+  t1ctx.moveTo(CX+somaR*0.85,CY-5);
+  t1ctx.quadraticCurveTo(CX+somaR+18,CY,CX+somaR+28,CY);
+  t1ctx.strokeStyle=isActiveHillock?'rgba(255,208,96,0.95)':'rgba(255,208,96,0.6)';
+  t1ctx.lineWidth=isActiveHillock?4:3;
+  t1ctx.shadowColor='#ffd060'; t1ctx.shadowBlur=isActiveHillock?16:6;
+  t1ctx.stroke(); t1ctx.shadowBlur=0;
+  t1ctx.restore();
+
+  // ── AXON SHAFT with myelin sheaths
+  const axonStart=CX+somaR+28;
+  const nodeCount=5;
+  const nodeSpacing=(axonEnd-100-axonStart)/nodeCount;
+  const isActiveAxon=t1Active==='myelin';
+  const isActiveNodes=t1Active==='nodes';
+
+  // Axon core
+  t1ctx.save();
+  t1ctx.beginPath();
+  t1ctx.moveTo(axonStart,CY);
+  t1ctx.lineTo(axonEnd-80,CY);
+  t1ctx.strokeStyle='rgba(64,255,176,0.35)';
+  t1ctx.lineWidth=2; t1ctx.stroke();
+  t1ctx.restore();
+
+  // Myelin segments
+  for(let i=0;i<nodeCount;i++){
+    const mx2=axonStart+i*nodeSpacing+nodeSpacing*0.15;
+    const mw=nodeSpacing*0.7;
+    t1ctx.save();
+    t1ctx.beginPath();
+    t1ctx.ellipse(mx2+mw/2,CY,mw/2,7,0,0,Math.PI*2);
+    const myeAlpha=0.4+0.15*Math.sin(t*0.5+i);
+    t1ctx.fillStyle=isActiveAxon?`rgba(64,255,176,${myeAlpha+0.25})`:`rgba(64,255,176,${myeAlpha})`;
+    t1ctx.fill();
+    t1ctx.shadowColor='#40ffb0'; t1ctx.shadowBlur=isActiveAxon?12:4;
+    t1ctx.strokeStyle=`rgba(64,255,176,${myeAlpha+0.1})`; t1ctx.lineWidth=1; t1ctx.stroke();
+    t1ctx.shadowBlur=0; t1ctx.restore();
+
+    // Node of Ranvier
+    const nx=axonStart+i*nodeSpacing+nodeSpacing;
+    if(i<nodeCount-1){
+      t1ctx.save();
+      t1ctx.beginPath(); t1ctx.arc(nx,CY,4+1.5*Math.sin(t*2+i),0,Math.PI*2);
+      t1ctx.fillStyle=isActiveNodes?'rgba(255,128,96,0.9)':'rgba(255,128,96,0.55)';
+      t1ctx.shadowColor='#ff8060'; t1ctx.shadowBlur=isActiveNodes?12:5;
+      t1ctx.fill(); t1ctx.shadowBlur=0; t1ctx.restore();
+    }
+  }
+
+  // ── SYNAPTIC TERMINALS
+  const isActiveTerminal=t1Active==='terminal';
+  for(let i=0;i<4;i++){
+    const ta=(i/3-0.5)*1.2;
+    const tx=axonEnd-80+Math.cos(ta)*60;
+    const ty=CY+Math.sin(ta)*55;
+    t1ctx.save();
+    t1ctx.strokeStyle=isActiveTerminal?'rgba(255,96,160,0.7)':'rgba(255,96,160,0.3)';
+    t1ctx.lineWidth=1.5;
+    t1ctx.beginPath(); t1ctx.moveTo(axonEnd-80,CY); t1ctx.quadraticCurveTo(axonEnd-50,CY+Math.sin(ta)*20,tx,ty); t1ctx.stroke();
+    t1ctx.beginPath(); t1ctx.arc(tx,ty,7+1.5*Math.sin(t*1.5+i),0,Math.PI*2);
+    const tg=t1ctx.createRadialGradient(tx,ty,0,tx,ty,9);
+    tg.addColorStop(0,'rgba(255,96,160,0.8)'); tg.addColorStop(1,'rgba(200,40,120,0.4)');
+    t1ctx.fillStyle=tg; t1ctx.fill();
+    t1ctx.shadowColor='#ff60a0'; t1ctx.shadowBlur=isActiveTerminal?14:6;
+    t1ctx.strokeStyle='rgba(255,96,160,0.6)'; t1ctx.lineWidth=1; t1ctx.stroke();
+    t1ctx.shadowBlur=0;
+    // Vesicle dots drifting
+    for(let v=0;v<3;v++){
+      const va=(t*0.4+v*2.1+i)%(Math.PI*2);
+      const vx=tx+Math.cos(va)*4,vy=ty+Math.sin(va)*4;
+      t1ctx.beginPath(); t1ctx.arc(vx,vy,1.5,0,Math.PI*2);
+      t1ctx.fillStyle='rgba(255,160,200,0.7)'; t1ctx.fill();
+    }
+    t1ctx.restore();
+  }
+
+  // Floating Na/K ions ambient
+  for(let i=0;i<20;i++){
+    const ix=(i/20*W+t*0.3*(i%2===0?1:-1))%W;
+    const iy=CY+(Math.sin(t*0.3+i*0.7)*H*0.3);
+    t1ctx.beginPath(); t1ctx.arc(ix,iy,1.5,0,Math.PI*2);
+    t1ctx.fillStyle=i%3===0?'rgba(255,208,96,0.2)':i%3===1?'rgba(40,160,255,0.2)':'rgba(64,255,176,0.15)';
+    t1ctx.fill();
+  }
+
+  t1Time+=0.016;
+}
+function animateT1(){drawT1();t1raf=requestAnimationFrame(animateT1);}
+
+// ============================================================
+//  TIER II — ACTION POTENTIAL
+// ============================================================
+let t2cvs,t2ctx,t2gcvs,t2gctx,t2raf;
+let t2Time=0;
+let t2Stim=0,t2Myelin=100,t2Temp=37,t2NaCh=100;
+const T2_THRESHOLD=55;
+let t2Firing=false,t2FirePos=-1,t2RefractZones=[];
+let t2VoltageHistory=[];
+let t2Voltage=-70;
+
+function initT2(){
+  t2cvs=document.getElementById('t2Canvas');
+  t2ctx=t2cvs.getContext('2d');
+  t2gcvs=document.getElementById('apGraphCanvas');
+  t2gctx=t2gcvs.getContext('2d');
+  resizeT2(); window.addEventListener('resize',resizeT2);
+  if(!t2raf) animateT2();
+}
+function resizeT2(){
+  if(!t2cvs) return;
+  const p=t2cvs.parentElement;
+  t2cvs.width=p.offsetWidth*devicePixelRatio; t2cvs.height=(p.offsetHeight-120)*devicePixelRatio;
+  t2ctx.scale(devicePixelRatio,devicePixelRatio);
+  t2gcvs.width=p.offsetWidth*devicePixelRatio; t2gcvs.height=120*devicePixelRatio;
+  t2gctx.scale(devicePixelRatio,devicePixelRatio);
+}
+
+function updateT2Stim(){
+  t2Stim=parseInt(document.getElementById('t2Stim').value);
+  document.getElementById('t2StimVal').textContent=t2Stim;
+  const note=document.getElementById('t2ThresholdNote');
+  if(t2Stim<T2_THRESHOLD) note.textContent=`Threshold: ${T2_THRESHOLD} · Below threshold: no signal`;
+  else note.textContent=`At threshold · Press FIRE to trigger action potential`;
+  note.style.color=t2Stim>=T2_THRESHOLD?'var(--accent2)':'var(--text-dim)';
+}
+
+function updateT2Conditions(){
+  t2Myelin=parseInt(document.getElementById('t2Myelin').value);
+  t2Temp=parseFloat(document.getElementById('t2Temp').value);
+  t2NaCh=parseInt(document.getElementById('t2NaCh').value);
+  document.getElementById('t2MyelinVal').textContent=t2Myelin+'%';
+  document.getElementById('t2TempVal').textContent=t2Temp+'°C';
+  document.getElementById('t2NaChVal').textContent=t2NaCh+'%';
+  const notes=[];
+  if(t2Myelin<30) notes.push('Low myelination — signal travels slowly, degrades over distance');
+  else if(t2Myelin>80) notes.push('Full myelination — saltatory conduction active');
+  if(t2Temp<32) notes.push('Low temperature — conduction slows significantly');
+  else if(t2Temp>39) notes.push('High temperature — conduction speeds up, risk of thermal damage');
+  if(t2NaCh<30) notes.push('Na⁺ channels blocked — action potential may fail (anesthetic effect)');
+  else if(t2NaCh<60) notes.push('Partial channel block — reduced signal amplitude');
+  document.getElementById('t2ConditionNote').textContent=notes.length?notes.join(' · '):'Normal conditions. Full myelination. Body temperature. All channels open.';
+  updateT2Readout();
+}
+
+function fireT2(){
+  if(t2Stim<T2_THRESHOLD){
+    document.getElementById('t2ThresholdNote').textContent='Below threshold — no signal. Increase stimulus to '+T2_THRESHOLD+' or higher.';
+    document.getElementById('t2ThresholdNote').style.color='#ff6060';
+    return;
+  }
+  if(t2NaCh<15){
+    document.getElementById('t2ConditionNote').textContent='Na⁺ channels fully blocked. Action potential cannot propagate. This is how local anesthetics work.';
+    return;
+  }
+  t2Firing=true;
+  t2FirePos=0;
+  t2RefractZones=[];
+  t2VoltageHistory=[];
+}
+
+function updateT2Readout(){
+  const myelFactor=t2Myelin/100;
+  const tempFactor=(t2Temp-20)/17;
+  const vel=(t2Myelin>50?70:1.5)*myelFactor*tempFactor*(t2NaCh/100);
+  document.getElementById('d2Vel').textContent=vel.toFixed(0)+' m/s';
+  document.getElementById('d2Peak').textContent=t2NaCh>30?(30+t2NaCh*0.7).toFixed(0)+' mV':'BLOCKED';
+  document.getElementById('d2Dur').textContent=(1.5+( 100-t2Temp)*0.05).toFixed(1)+' ms';
+  document.getElementById('d2Ref').textContent=(2+( 100-t2NaCh)*0.02).toFixed(1)+' ms';
+  const vel2=vel;
+  document.getElementById('t2SpeedBadge').textContent=`CONDUCTION: ${vel2.toFixed(0)} m/s`;
+}
+
+function drawT2(){
+  if(!t2ctx) return;
+  const W=t2cvs.offsetWidth,H=t2cvs.offsetHeight;
+  if(!W||!H) return;
+  const bg=getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#020810';
+  t2ctx.fillStyle=bg; t2ctx.fillRect(0,0,W,H);
+
+  const AY=H*0.5;
+  const AXON_START=W*0.08, AXON_END=W*0.92;
+  const nodeCount=Math.round(6*(t2Myelin/100))+2;
+  const nodeSpacing=(AXON_END-AXON_START)/nodeCount;
+  const t=t2Time;
+  const myelFactor=t2Myelin/100;
+  const tempFactor=(t2Temp-20)/17;
+  const fireSpeed=2.5*myelFactor*tempFactor*(t2NaCh/100)+0.5;
+
+  // Soma on left
+  t2ctx.save();
+  t2ctx.beginPath(); t2ctx.arc(AXON_START-30,AY,22+1.5*Math.sin(t*1.2),0,Math.PI*2);
+  const sg=t2ctx.createRadialGradient(AXON_START-40,AY-8,0,AXON_START-30,AY,22);
+  sg.addColorStop(0,'rgba(100,60,200,0.7)'); sg.addColorStop(1,'rgba(40,20,120,0.3)');
+  t2ctx.fillStyle=sg; t2ctx.fill();
+  t2ctx.shadowColor='#a060ff'; t2ctx.shadowBlur=10;
+  t2ctx.strokeStyle='rgba(160,96,255,0.6)'; t2ctx.lineWidth=1.5; t2ctx.stroke(); t2ctx.shadowBlur=0;
+  t2ctx.restore();
+
+  // Axon shaft
+  t2ctx.save();
+  t2ctx.beginPath(); t2ctx.moveTo(AXON_START,AY); t2ctx.lineTo(AXON_END,AY);
+  t2ctx.strokeStyle='rgba(64,255,176,0.2)'; t2ctx.lineWidth=2; t2ctx.stroke();
+  t2ctx.restore();
+
+  // Myelin sheaths
+  for(let i=0;i<nodeCount;i++){
+    const mx=AXON_START+i*nodeSpacing+nodeSpacing*0.12;
+    const mw=nodeSpacing*0.76;
+    const alpha=0.15+myelFactor*0.45;
+    t2ctx.save();
+    t2ctx.beginPath(); t2ctx.ellipse(mx+mw/2,AY,mw/2,8*myelFactor,0,0,Math.PI*2);
+    t2ctx.fillStyle=`rgba(64,255,176,${alpha})`;
+    t2ctx.strokeStyle=`rgba(64,255,176,${alpha+0.1})`; t2ctx.lineWidth=1;
+    t2ctx.fill(); t2ctx.stroke(); t2ctx.restore();
+
+    // Node
+    const nx=AXON_START+(i+1)*nodeSpacing;
+    if(nx<AXON_END){
+      t2ctx.save();
+      t2ctx.beginPath(); t2ctx.arc(nx,AY,3.5,0,Math.PI*2);
+      t2ctx.fillStyle='rgba(255,128,96,0.6)'; t2ctx.fill(); t2ctx.restore();
+    }
+  }
+
+  // Refractory zones
+  t2RefractZones.forEach(rz=>{
+    const rx=AXON_START+rz.pos*(AXON_END-AXON_START);
+    const alpha=Math.max(0,rz.life/60)*0.4;
+    t2ctx.save();
+    t2ctx.beginPath(); t2ctx.ellipse(rx,AY,nodeSpacing*0.6,12,0,0,Math.PI*2);
+    t2ctx.fillStyle=`rgba(80,20,20,${alpha})`; t2ctx.fill();
+    rz.life--;
+    t2ctx.restore();
+  });
+  t2RefractZones=t2RefractZones.filter(rz=>rz.life>0);
+
+  // Fire wave
+  if(t2Firing){
+    const fireX=AXON_START+t2FirePos*(AXON_END-AXON_START);
+    const waveW=nodeSpacing*0.8;
+
+    // Depolarization front
+    const dg=t2ctx.createRadialGradient(fireX,AY,0,fireX,AY,waveW);
+    dg.addColorStop(0,'rgba(255,245,200,0.95)');
+    dg.addColorStop(0.3,'rgba(255,208,96,0.7)');
+    dg.addColorStop(1,'rgba(255,150,50,0)');
+    t2ctx.save();
+    t2ctx.fillStyle=dg; t2ctx.fillRect(fireX-waveW,AY-24,waveW*2,48); t2ctx.restore();
+
+    // Ion rush visualization
+    for(let i=0;i<8;i++){
+      const ia=i/8*Math.PI*2;
+      const ir=5+Math.random()*12;
+      t2ctx.save();
+      t2ctx.beginPath(); t2ctx.arc(fireX+Math.cos(ia)*ir,AY+Math.sin(ia)*ir*0.5,2,0,Math.PI*2);
+      t2ctx.fillStyle=i%2===0?'rgba(255,208,96,0.9)':'rgba(40,160,255,0.9)';
+      t2ctx.shadowColor=i%2===0?'#ffd060':'#28a0ff'; t2ctx.shadowBlur=6;
+      t2ctx.fill(); t2ctx.shadowBlur=0; t2ctx.restore();
+    }
+
+    // Na+ flooding in
+    for(let i=0;i<5;i++){
+      const nax=fireX+Math.cos(t*8+i)*15;
+      const nay=AY+Math.sin(t*6+i)*10;
+      t2ctx.save();
+      t2ctx.fillStyle='rgba(255,208,96,0.7)'; t2ctx.font='8px DM Mono';
+      t2ctx.fillText('Na⁺',nax-8,nay+3); t2ctx.restore();
+    }
+
+    // Repolarization wake
+    if(t2FirePos>0.05){
+      const repX=AXON_START+(t2FirePos-0.08)*(AXON_END-AXON_START);
+      t2ctx.save();
+      t2ctx.beginPath(); t2ctx.ellipse(repX,AY,waveW*0.6,16,0,0,Math.PI*2);
+      t2ctx.fillStyle='rgba(26,74,138,0.5)'; t2ctx.fill();
+      // K+ flowing out
+      for(let i=0;i<4;i++){
+        t2ctx.fillStyle='rgba(40,160,255,0.6)'; t2ctx.font='8px DM Mono';
+        t2ctx.fillText('K⁺',repX+Math.cos(t*5+i*1.5)*12-8,AY+Math.sin(t*4+i)*12+3);
+      }
+      t2ctx.restore();
+    }
+
+    // Add to voltage history
+    t2Voltage=t2FirePos>0.02&&t2FirePos<0.15?
+      -70+(t2NaCh/100)*100*Math.exp(-( (t2FirePos-0.08)*(AXON_END-AXON_START))/60):
+      -70;
+    if(t2VoltageHistory.length>200) t2VoltageHistory.shift();
+    t2VoltageHistory.push(t2Voltage);
+
+    // Advance
+    t2FirePos+=fireSpeed*0.006;
+    if(t2FirePos>0.1) t2RefractZones.push({pos:t2FirePos-0.1,life:80});
+
+    // Update badge
+    document.getElementById('t2StatusBadge').textContent=`FIRING · ${(t2FirePos*100).toFixed(0)}% TRAVELED`;
+    document.getElementById('t2StatusBadge').classList.add('active');
+
+    if(t2FirePos>=1){
+      t2Firing=false; t2FirePos=-1;
+      t2Voltage=-70;
+      document.getElementById('t2StatusBadge').textContent='RESTING · −70 mV';
+      document.getElementById('t2StatusBadge').classList.remove('active');
+    }
+  } else {
+    // Resting ion drift
+    for(let i=0;i<25;i++){
+      const ix=(AXON_START+( i/25*(AXON_END-AXON_START)+t*(i%2===0?0.2:-0.15)))%(AXON_END-AXON_START);
+      const iy=AY+(Math.sin(t*0.4+i*0.9)*18);
+      t2ctx.beginPath(); t2ctx.arc(AXON_START+ix,iy,1.5,0,Math.PI*2);
+      t2ctx.fillStyle=i%2===0?'rgba(255,208,96,0.18)':'rgba(40,160,255,0.18)'; t2ctx.fill();
+    }
+    t2Voltage=-70;
+    if(t2VoltageHistory.length>0) t2VoltageHistory.push(-70);
+    if(t2VoltageHistory.length>200) t2VoltageHistory.shift();
+  }
+
+  // Labels
+  t2ctx.fillStyle='rgba(204,232,255,0.25)'; t2ctx.font='8px DM Mono';
+  t2ctx.fillText('DENDRITES',AXON_START-65,AY-35);
+  t2ctx.fillText('AXON HILLOCK',AXON_START+5,AY-30);
+  t2ctx.fillText('MYELINATED AXON',AXON_START+( AXON_END-AXON_START)*0.35,AY-25);
+  t2ctx.fillText('SYNAPTIC TERMINALS',AXON_END-110,AY-30);
+
+  // Voltage graph
+  drawT2Graph();
+  t2Time+=0.016;
+}
+
+function drawT2Graph(){
+  if(!t2gctx) return;
+  const GW=t2gcvs.offsetWidth,GH=t2gcvs.offsetHeight;
+  if(!GW||!GH) return;
+  t2gctx.fillStyle='rgba(2,8,16,0.95)'; t2gctx.fillRect(0,0,GW,GH);
+  t2gctx.strokeStyle='rgba(40,160,255,0.1)'; t2gctx.lineWidth=1;
+  // Threshold line
+  const threshY=GH*0.3;
+  t2gctx.beginPath(); t2gctx.moveTo(0,threshY); t2gctx.lineTo(GW,threshY);
+  t2gctx.strokeStyle='rgba(255,96,96,0.3)'; t2gctx.setLineDash([4,4]); t2gctx.stroke(); t2gctx.setLineDash([]);
+  t2gctx.fillStyle='rgba(255,96,96,0.4)'; t2gctx.font='7px DM Mono'; t2gctx.fillText('THRESHOLD −55mV',4,threshY-3);
+  // Resting line
+  const restY=GH*0.75;
+  t2gctx.beginPath(); t2gctx.moveTo(0,restY); t2gctx.lineTo(GW,restY);
+  t2gctx.strokeStyle='rgba(40,160,255,0.2)'; t2gctx.stroke();
+  t2gctx.fillStyle='rgba(40,160,255,0.35)'; t2gctx.fillText('RESTING −70mV',4,restY-3);
+  // Voltage trace
+  if(t2VoltageHistory.length>2){
+    t2gctx.beginPath();
+    t2VoltageHistory.forEach((v,i)=>{
+      const x=i/200*GW;
+      const y=GH*0.5-((v+70)/120)*GH*0.8;
+      i===0?t2gctx.moveTo(x,y):t2gctx.lineTo(x,y);
+    });
+    t2gctx.strokeStyle='rgba(255,208,96,0.8)'; t2gctx.lineWidth=2;
+    t2gctx.shadowColor='rgba(255,208,96,0.4)'; t2gctx.shadowBlur=8;
+    t2gctx.stroke(); t2gctx.shadowBlur=0;
+  }
+  t2gctx.fillStyle='rgba(204,232,255,0.3)'; t2gctx.font='7px DM Mono';
+  t2gctx.fillText('MEMBRANE VOLTAGE (mV)',4,GH-4);
+}
+
+function animateT2(){drawT2();t2raf=requestAnimationFrame(animateT2);}
+
+// ============================================================
+//  TIER III — THE SYNAPSE
+// ============================================================
+let t3cvs,t3ctx,t3raf,t3Time=0;
+let t3NT='glutamate',t3Reuptake=80,t3RecSens=100;
+let t3Vesicles=[],t3Released=[],t3Reuptaking=[];
+let t3PostPotential=-70;
+
+const NT_DATA={
+  glutamate:{color:'#ffd060',type:'EXCITATORY',desc:'<span style="color:var(--accent)">GLUTAMATE</span> — Primary excitatory. Fires the next neuron. Learning and memory depend on it. Found at most synapses.'},
+  gaba:{color:'#40ffb0',type:'INHIBITORY',desc:'<span style="color:var(--accent4)">GABA</span> — Primary inhibitory. Reduces the chance the next neuron fires. The brain\'s natural brake. Alcohol mimics GABA. Anxiety disorders often involve GABA dysfunction.'},
+  dopamine:{color:'#a060ff',type:'MODULATORY',desc:'<span style="color:var(--accent3)">DOPAMINE</span> — Reward and motivation. Not just pleasure — prediction of reward. Released when something better than expected happens. Parkinson\'s is dopamine depletion. Addiction hijacks this system.'},
+  serotonin:{color:'#ff80c0',type:'MODULATORY',desc:'<span style="color:#ff80c0">SEROTONIN</span> — Mood, sleep, appetite regulation. 90% of it is in your gut, not your brain. SSRIs prevent its reuptake. Low serotonin correlates with depression — though causality is more complex.'},
+};
+
+function setNT(nt){
+  t3NT=nt;
+  ['Glu','Gaba','Dopa','Sero'].forEach((n,i)=>{
+    document.getElementById('nt'+n).classList.toggle('active',['glutamate','gaba','dopamine','serotonin'][i]===nt);
+  });
+  document.getElementById('ntDesc').innerHTML=NT_DATA[nt].desc;
+  document.getElementById('d3Type').textContent=NT_DATA[nt].type;
+}
+
+function updateT3(){
+  t3Reuptake=parseInt(document.getElementById('t3Reuptake').value);
+  t3RecSens=parseInt(document.getElementById('t3RecSens').value);
+  document.getElementById('t3ReuptakeVal').textContent=t3Reuptake+'%';
+  document.getElementById('t3RecSensVal').textContent=t3RecSens+'%';
+  const rn=document.getElementById('t3ReuptakeNote');
+  if(t3Reuptake<20) rn.textContent='Reuptake nearly blocked. Neurotransmitters flood the cleft. SSRI/SNRI territory.';
+  else if(t3Reuptake<50) rn.textContent='Reduced reuptake. Extended signal duration. Enhanced effect.';
+  else rn.textContent='Normal reuptake. Neurotransmitters cleared efficiently.';
+  const sn=document.getElementById('t3SensNote');
+  if(t3RecSens>150) sn.textContent='Hypersensitive receptors. Amplified response. Up-regulation.';
+  else if(t3RecSens<50) sn.textContent='Reduced sensitivity. Down-regulation. Tolerance mechanism.';
+  else sn.textContent='Normal sensitivity. Baseline receptor response.';
+}
+
+function fireT3(){
+  const ntd=NT_DATA[t3NT];
+  for(let i=0;i<12;i++){
+    t3Vesicles.push({
+      x:0,y:(Math.random()-0.5)*0.6,
+      age:0,
+      released:false,
+      color:ntd.color
+    });
+  }
+}
+
+function initT3(){
+  t3cvs=document.getElementById('t3Canvas');
+  t3ctx=t3cvs.getContext('2d');
+  resizeT3(); window.addEventListener('resize',resizeT3);
+  setNT('glutamate');
+  if(!t3raf) animateT3();
+}
+function resizeT3(){
+  if(!t3cvs) return;
+  const p=t3cvs.parentElement;
+  t3cvs.width=p.offsetWidth*devicePixelRatio; t3cvs.height=p.offsetHeight*devicePixelRatio;
+  t3ctx.scale(devicePixelRatio,devicePixelRatio);
+}
+
+function drawT3(){
+  if(!t3ctx) return;
+  const W=t3cvs.offsetWidth,H=t3cvs.offsetHeight;
+  if(!W||!H) return;
+  const bg=getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#020810';
+  t3ctx.fillStyle=bg; t3ctx.fillRect(0,0,W,H);
+  const t=t3Time;
+  const ntd=NT_DATA[t3NT];
+  const CLEFT_Y=H*0.5;
+  const CLEFT_H=H*0.12;
+  const PRE_H=H*0.38;
+  const POST_H=H*0.38;
+
+  // Background gradient
+  const bg2=t3ctx.createRadialGradient(W*0.5,CLEFT_Y,0,W*0.5,CLEFT_Y,W*0.5);
+  bg2.addColorStop(0,ntd.color+'08'); bg2.addColorStop(1,'transparent');
+  t3ctx.fillStyle=bg2; t3ctx.fillRect(0,0,W,H);
+
+  // ── PRESYNAPTIC TERMINAL (top)
+  t3ctx.save();
+  t3ctx.fillStyle='rgba(40,100,180,0.25)';
+  t3ctx.strokeStyle='rgba(40,160,255,0.4)'; t3ctx.lineWidth=1.5;
+  t3ctx.beginPath();
+  t3ctx.roundRect(W*0.15,0,W*0.7,CLEFT_Y-CLEFT_H/2,4);
+  t3ctx.fill(); t3ctx.stroke();
+  t3ctx.restore();
+  t3ctx.fillStyle='rgba(204,232,255,0.25)'; t3ctx.font='8px DM Mono';
+  t3ctx.textAlign='center';
+  t3ctx.fillText('PRESYNAPTIC TERMINAL',W*0.5,18);
+  t3ctx.textAlign='left';
+
+  // Vesicle pool in presynaptic terminal
+  const VESICLE_COUNT=16;
+  for(let i=0;i<VESICLE_COUNT;i++){
+    const va=i/VESICLE_COUNT*Math.PI*2+t*0.05*(i%2===0?1:-1);
+    const vr=Math.min(W,PRE_H)*0.22;
+    const vx=W*0.5+Math.cos(va)*vr*(0.6+0.2*Math.sin(i));
+    const vy=PRE_H*0.5+Math.sin(va)*vr*0.4*(0.5+0.2*Math.cos(i));
+    t3ctx.save();
+    t3ctx.beginPath(); t3ctx.arc(vx,vy,6,0,Math.PI*2);
+    t3ctx.fillStyle=ntd.color+'88'; t3ctx.fill();
+    t3ctx.strokeStyle=ntd.color+'aa'; t3ctx.lineWidth=1.5; t3ctx.stroke();
+    t3ctx.restore();
+  }
+
+  // ── SYNAPTIC CLEFT
+  t3ctx.save();
+  t3ctx.fillStyle='rgba(255,255,255,0.02)';
+  t3ctx.strokeStyle='rgba(40,160,255,0.2)'; t3ctx.lineWidth=1;
+  t3ctx.setLineDash([3,3]);
+  t3ctx.beginPath(); t3ctx.moveTo(W*0.15,CLEFT_Y-CLEFT_H/2); t3ctx.lineTo(W*0.85,CLEFT_Y-CLEFT_H/2); t3ctx.stroke();
+  t3ctx.beginPath(); t3ctx.moveTo(W*0.15,CLEFT_Y+CLEFT_H/2); t3ctx.lineTo(W*0.85,CLEFT_Y+CLEFT_H/2); t3ctx.stroke();
+  t3ctx.setLineDash([]);
+  t3ctx.restore();
+  t3ctx.fillStyle='rgba(204,232,255,0.18)'; t3ctx.font='7px DM Mono';
+  t3ctx.textAlign='center';
+  t3ctx.fillText('SYNAPTIC CLEFT · 20nm',W*0.5,CLEFT_Y+3);
+  t3ctx.textAlign='left';
+
+  // ── POSTSYNAPTIC MEMBRANE (bottom)
+  t3ctx.save();
+  t3ctx.fillStyle='rgba(60,20,140,0.22)';
+  t3ctx.strokeStyle='rgba(160,96,255,0.4)'; t3ctx.lineWidth=1.5;
+  t3ctx.beginPath();
+  t3ctx.roundRect(W*0.15,CLEFT_Y+CLEFT_H/2,W*0.7,POST_H+20,4);
+  t3ctx.fill(); t3ctx.stroke(); t3ctx.restore();
+  t3ctx.fillStyle='rgba(204,232,255,0.25)'; t3ctx.font='8px DM Mono';
+  t3ctx.textAlign='center';
+  t3ctx.fillText('POSTSYNAPTIC MEMBRANE',W*0.5,CLEFT_Y+CLEFT_H/2+14);
+  t3ctx.textAlign='left';
+
+  // Receptors on postsynaptic membrane
+  const recCount=10;
+  for(let i=0;i<recCount;i++){
+    const rx=W*0.2+i*(W*0.6/recCount);
+    const ry=CLEFT_Y+CLEFT_H/2+4;
+    const isBound=t3Released.some(r=>Math.abs(r.cx-rx)<18);
+    t3ctx.save();
+    t3ctx.beginPath();
+    t3ctx.rect(rx-6,ry,12,16);
+    t3ctx.fillStyle=isBound?ntd.color+'cc':'rgba(160,96,255,0.35)';
+    t3ctx.shadowColor=isBound?ntd.color:'transparent'; t3ctx.shadowBlur=isBound?12:0;
+    t3ctx.fill();
+    t3ctx.strokeStyle=isBound?ntd.color:'rgba(160,96,255,0.5)'; t3ctx.lineWidth=1; t3ctx.stroke();
+    t3ctx.shadowBlur=0; t3ctx.restore();
+  }
+
+  // Reuptake pumps
+  const pumpCount=5;
+  for(let i=0;i<pumpCount;i++){
+    const px=W*0.22+i*(W*0.56/pumpCount);
+    const py=CLEFT_Y-CLEFT_H/2-4;
+    const active=t3Reuptake>30&&Math.sin(t*3+i)>0.3;
+    t3ctx.save();
+    t3ctx.beginPath(); t3ctx.arc(px,py,5,0,Math.PI*2);
+    t3ctx.fillStyle=active?'rgba(64,255,176,0.6)':'rgba(64,255,176,0.2)';
+    t3ctx.shadowColor=active?'#40ffb0':'transparent'; t3ctx.shadowBlur=active?10:0;
+    t3ctx.fill(); t3ctx.shadowBlur=0;
+    t3ctx.strokeStyle='rgba(64,255,176,0.4)'; t3ctx.lineWidth=1; t3ctx.stroke();
+    if(active){
+      t3ctx.fillStyle='rgba(64,255,176,0.5)'; t3ctx.font='6px DM Mono';
+      t3ctx.fillText('↑',px-3,py-7);
+    }
+    t3ctx.restore();
+  }
+
+  // Vesicle release animation
+  t3Vesicles.forEach(v=>{
+    v.age++;
+    const vy2=CLEFT_Y-CLEFT_H/2-5;
+    if(v.age<30){
+      // Moving toward membrane
+      v.cx=W*0.5+(v.y*W*0.3);
+      v.cy=PRE_H*0.6+(v.age/30)*(vy2-PRE_H*0.6);
+    } else if(v.age===30){
+      v.released=true;
+      v.cx=W*0.5+(v.y*W*0.3);
+      v.cy=CLEFT_Y;
+      t3Released.push({cx:v.cx,cy:v.cy,age:0,life:80+Math.random()*60,color:v.color});
+    }
+    if(!v.released){
+      t3ctx.save();
+      t3ctx.beginPath(); t3ctx.arc(v.cx,v.cy,5,0,Math.PI*2);
+      t3ctx.fillStyle=v.color+'99'; t3ctx.fill();
+      t3ctx.strokeStyle=v.color; t3ctx.lineWidth=1; t3ctx.stroke(); t3ctx.restore();
+    }
+  });
+  t3Vesicles=t3Vesicles.filter(v=>!v.released);
+
+  // Floating neurotransmitters in cleft
+  t3Released.forEach(r=>{
+    r.age++;
+    // Drift in cleft
+    r.cx+=Math.sin(r.age*0.12+r.cy)*0.5;
+    r.cy=CLEFT_Y+(Math.sin(r.age*0.08)*CLEFT_H*0.3);
+    const alpha=Math.max(0,1-r.age/r.life)*0.9;
+    t3ctx.save();
+    t3ctx.beginPath(); t3ctx.arc(r.cx,r.cy,4,0,Math.PI*2);
+    t3ctx.fillStyle=r.color+Math.round(alpha*255).toString(16).padStart(2,'0');
+    t3ctx.shadowColor=r.color; t3ctx.shadowBlur=8*alpha;
+    t3ctx.fill(); t3ctx.shadowBlur=0; t3ctx.restore();
+  });
+
+  // Reuptake removal
+  t3Released=t3Released.filter(r=>{
+    if(r.age>r.life*(t3Reuptake/100)) return false;
+    return r.age<r.life;
+  });
+
+  // Post potential update
+  const ntInCleft=t3Released.length;
+  const excite=t3NT==='glutamate'?1:t3NT==='dopamine'?0.5:-0.5;
+  const delta=ntInCleft*excite*(t3RecSens/100)*0.15;
+  t3PostPotential+=(delta-( t3PostPotential+70)*0.04);
+  t3PostPotential=Math.max(-90,Math.min(40,t3PostPotential));
+  document.getElementById('d3NT').textContent=ntInCleft;
+  document.getElementById('d3Post').textContent=t3PostPotential.toFixed(0)+' mV';
+
+  // Post potential indicator bar
+  const pBar=H-30;
+  const pW=W*0.7;
+  const pX=W*0.15;
+  t3ctx.save();
+  t3ctx.fillStyle='rgba(255,255,255,0.04)';
+  t3ctx.fillRect(pX,pBar,pW,8);
+  const norm=( t3PostPotential+90)/130;
+  const barCol=t3PostPotential>-55?'rgba(255,208,96,0.8)':t3NT==='gaba'?'rgba(64,255,176,0.6)':'rgba(40,160,255,0.6)';
+  t3ctx.fillStyle=barCol;
+  t3ctx.fillRect(pX,pBar,pW*norm,8);
+  t3ctx.strokeStyle='rgba(204,232,255,0.15)'; t3ctx.lineWidth=1;
+  t3ctx.strokeRect(pX,pBar,pW,8);
+  t3ctx.fillStyle='rgba(204,232,255,0.3)'; t3ctx.font='7px DM Mono';
+  t3ctx.fillText(`POST-SYNAPTIC POTENTIAL: ${t3PostPotential.toFixed(0)} mV${t3PostPotential>-55?' · THRESHOLD REACHED':''}`,pX,pBar-4);
+  t3ctx.restore();
+
+  t3Time+=0.016;
+}
+function animateT3(){drawT3();t3raf=requestAnimationFrame(animateT3);}
+
+// ============================================================
+//  TIER IV — THE NETWORK
+// ============================================================
+let t4cvs,t4ctx,t4raf,t4Time=0;
+let t4Neurons=[];
+let t4Connections=[];
+let t4Frame=0;
+
+class Neuron{
+  constructor(x,y,type){
+    this.x=x; this.y=y;
+    this.type=type; // 'excitatory' or 'inhibitory'
+    this.potential=-70;
+    this.firing=false;
+    this.fireTimer=0;
+    this.refractory=false;
+    this.refractTimer=0;
+    this.strength=1;
+    this.damaged=false;
+    this.color=type==='inhibitory'?'#40ffb0':'#28a0ff';
+  }
+  update(neurons,connections){
+    if(this.damaged) return;
+    if(this.refractory){
+      this.refractTimer--;
+      if(this.refractTimer<=0){this.refractory=false;this.potential=-70;}
+      return;
+    }
+    if(this.firing){
+      this.fireTimer--;
+      if(this.fireTimer<=0){
+        this.firing=false;
+        this.refractory=true;
+        this.refractTimer=18;
+        this.potential=-70;
+        // Propagate
+        const outgoing=connections.filter(c=>c.from===neurons.indexOf(this)&&!c.blocked);
+        outgoing.forEach(c=>{
+          const target=neurons[c.to];
+          if(target&&!target.damaged&&!target.refractory){
+            const delta=this.type==='excitatory'?c.strength*18:-c.strength*12;
+            target.potential+=delta;
+            if(target.potential>-55&&!target.firing){
+              target.firing=true; target.fireTimer=8;
+              target.potential=40;
+            }
+          }
+        });
+      }
+    } else {
+      this.potential+=(-70-this.potential)*0.02;
+    }
+  }
+}
+
+function buildT4Network(){
+  const W=t4cvs?t4cvs.offsetWidth:800;
+  const H=t4cvs?t4cvs.offsetHeight:600;
+  const count=parseInt(document.getElementById('t4Count').value);
+  const connectivity=parseInt(document.getElementById('t4Connect').value);
+  const inhibPct=parseInt(document.getElementById('t4Inhib').value)/100;
+  t4Neurons=[];t4Connections=[];
+  for(let i=0;i<count;i++){
+    const type=Math.random()<inhibPct?'inhibitory':'excitatory';
+    t4Neurons.push(new Neuron(
+      W*0.08+Math.random()*W*0.84,
+      H*0.08+Math.random()*H*0.84,type
+    ));
+  }
+  // Connect
+  t4Neurons.forEach((n,i)=>{
+    const sorted=[...t4Neurons].filter((_,j)=>j!==i)
+      .sort((a,b)=>Math.hypot(a.x-n.x,a.y-n.y)-Math.hypot(b.x-n.x,b.y-n.y))
+      .slice(0,connectivity);
+    sorted.forEach(target=>{
+      const ti=t4Neurons.indexOf(target);
+      if(!t4Connections.some(c=>c.from===i&&c.to===ti)){
+        t4Connections.push({from:i,to:ti,strength:0.5+Math.random()*0.5,blocked:false});
+      }
+    });
+  });
+  updateT4Readout();
+  t4Log(`Network built: ${count} neurons, ${t4Connections.length} connections.`,'good');
+}
+
+function rebuildT4(){
+  document.getElementById('t4CountVal').textContent=document.getElementById('t4Count').value;
+  document.getElementById('t4ConnectVal').textContent=document.getElementById('t4Connect').value;
+  document.getElementById('t4InhibVal').textContent=document.getElementById('t4Inhib').value+'%';
+  buildT4Network();
+}
+
+function updateT4Readout(){
+  document.getElementById('d4Neurons').textContent=t4Neurons.filter(n=>!n.damaged).length;
+  document.getElementById('d4Conns').textContent=t4Connections.filter(c=>!c.blocked).length;
+  document.getElementById('d4Inhib').textContent=t4Neurons.filter(n=>n.type==='inhibitory').length;
+}
+
+function t4StimAll(){
+  const targets=t4Neurons.filter(n=>!n.damaged&&!n.refractory&&!n.firing);
+  const picked=targets.sort(()=>Math.random()-0.5).slice(0,3);
+  picked.forEach(n=>{n.firing=true;n.fireTimer=8;n.potential=40;});
+  t4Log(`${picked.length} neurons stimulated.`,'fire');
+}
+
+function t4Strengthen(){
+  const active=t4Connections.filter(c=>{
+    const fn=t4Neurons[c.from];
+    return fn&&!fn.damaged&&fn.firing;
+  });
+  if(active.length===0){
+    t4StimAll();
+    t4Log('Stimulating then strengthening active pathways.','good');
+    return;
+  }
+  active.forEach(c=>{c.strength=Math.min(2,c.strength+0.3);});
+  t4Log(`${active.length} connections strengthened. Hebbian rule: fire together, wire together.`,'good');
+}
+
+function t4Weaken(){
+  const inactive=t4Connections.filter(c=>{
+    const fn=t4Neurons[c.from];
+    return fn&&!fn.firing&&c.strength>0.2;
+  });
+  const targets=inactive.sort(()=>Math.random()-0.5).slice(0,5);
+  targets.forEach(c=>{c.strength=Math.max(0.1,c.strength-0.3);});
+  t4Log(`${targets.length} connections weakened. Use it or lose it.`,'');
+}
+
+function t4Damage(){
+  const healthy=t4Neurons.filter(n=>!n.damaged);
+  if(healthy.length===0){t4Log('No healthy neurons to damage.','warn');return;}
+  const target=healthy[Math.floor(Math.random()*healthy.length)];
+  target.damaged=true;
+  const i=t4Neurons.indexOf(target);
+  t4Connections.filter(c=>c.from===i||c.to===i).forEach(c=>c.blocked=true);
+  t4Log(`Neuron damaged. ${t4Connections.filter(c=>c.blocked).length} connections severed. Network rerouting.`,'warn');
+  updateT4Readout();
+}
+
+function t4Reset(){
+  buildT4Network();
+}
+
+function t4Log(msg,type=''){
+  const log=document.getElementById('t4LogEntries');
+  const e=document.createElement('div');
+  e.className=`log-e ${type}`; e.textContent=msg;
+  log.insertBefore(e,log.firstChild);
+  while(log.children.length>20) log.removeChild(log.lastChild);
+}
+
+function initT4(){
+  t4cvs=document.getElementById('t4Canvas');
+  t4ctx=t4cvs.getContext('2d');
+  resizeT4(); window.addEventListener('resize',()=>{resizeT4();buildT4Network();});
+  t4cvs.addEventListener('click',e=>{
+    const r=t4cvs.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    let closest=null,closestD=99999;
+    t4Neurons.forEach(n=>{
+      const d=Math.hypot(n.x-mx,n.y-my);
+      if(d<closestD){closestD=d;closest=n;}
+    });
+    if(closest&&closestD<30&&!closest.damaged&&!closest.refractory){
+      closest.firing=true; closest.fireTimer=8; closest.potential=40;
+      t4Log('Neuron manually stimulated.','fire');
+    }
+  });
+  buildT4Network();
+  if(!t4raf) animateT4();
+}
+
+function resizeT4(){
+  if(!t4cvs) return;
+  const p=t4cvs.parentElement;
+  t4cvs.width=p.offsetWidth*devicePixelRatio; t4cvs.height=p.offsetHeight*devicePixelRatio;
+  t4ctx.scale(devicePixelRatio,devicePixelRatio);
+}
+
+function drawT4(){
+  if(!t4ctx) return;
+  const W=t4cvs.offsetWidth,H=t4cvs.offsetHeight;
+  if(!W||!H) return;
+  t4ctx.fillStyle='rgba(2,8,16,0.2)'; t4ctx.fillRect(0,0,W,H);
+
+  // Update neurons
+  t4Neurons.forEach(n=>n.update(t4Neurons,t4Connections));
+
+  // Draw connections
+  t4Connections.forEach(c=>{
+    if(c.blocked) return;
+    const fn=t4Neurons[c.from],tn=t4Neurons[c.to];
+    if(!fn||!tn) return;
+    const active=fn.firing||tn.firing;
+    const inhib=fn.type==='inhibitory';
+    t4ctx.save();
+    t4ctx.beginPath(); t4ctx.moveTo(fn.x,fn.y); t4ctx.lineTo(tn.x,tn.y);
+    const alpha=active?0.7:c.strength*0.15;
+    t4ctx.strokeStyle=inhib?`rgba(64,255,176,${alpha})`:`rgba(40,160,255,${alpha})`;
+    t4ctx.lineWidth=active?c.strength*2.5:c.strength*0.8;
+    if(active){t4ctx.shadowColor=inhib?'#40ffb0':'#28a0ff'; t4ctx.shadowBlur=8;}
+    t4ctx.stroke(); t4ctx.shadowBlur=0; t4ctx.restore();
+  });
+
+  // Draw neurons
+  let activeCount=0;
+  t4Neurons.forEach((n,i)=>{
+    if(n.firing) activeCount++;
+    const r=n.firing?11:n.damaged?5:7+( n.potential+70)/130*3;
+    t4ctx.save();
+    t4ctx.beginPath(); t4ctx.arc(n.x,n.y,r,0,Math.PI*2);
+    if(n.damaged){
+      t4ctx.fillStyle='rgba(80,20,20,0.5)'; t4ctx.fill();
+      t4ctx.strokeStyle='rgba(180,60,60,0.4)'; t4ctx.lineWidth=1; t4ctx.stroke();
+    } else if(n.firing){
+      const fg=t4ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r);
+      fg.addColorStop(0,'rgba(255,245,200,1)');
+      fg.addColorStop(0.4,'rgba(255,208,96,0.9)');
+      fg.addColorStop(1,'rgba(255,150,50,0.1)');
+      t4ctx.fillStyle=fg; t4ctx.fill();
+      t4ctx.shadowColor='#ffd060'; t4ctx.shadowBlur=20; t4ctx.fill(); t4ctx.shadowBlur=0;
+    } else if(n.refractory){
+      t4ctx.fillStyle='rgba(40,20,80,0.6)'; t4ctx.fill();
+      t4ctx.strokeStyle='rgba(160,96,255,0.3)'; t4ctx.lineWidth=1; t4ctx.stroke();
+    } else {
+      t4ctx.fillStyle=n.type==='inhibitory'?'rgba(64,255,176,0.25)':'rgba(40,160,255,0.25)'; t4ctx.fill();
+      t4ctx.shadowColor=n.color; t4ctx.shadowBlur=5;
+      t4ctx.strokeStyle=n.color+'55'; t4ctx.lineWidth=1.5; t4ctx.stroke(); t4ctx.shadowBlur=0;
+    }
+    t4ctx.restore();
+  });
+
+  document.getElementById('d4Active').textContent=activeCount;
+
+  // Coherence
+  t4Frame++;
+  if(t4Frame%30===0){
+    const total=t4Neurons.filter(n=>!n.damaged).length;
+    const coherence=total>0?Math.min(100,(activeCount/total)*500):0;
+    document.getElementById('t4CoherenceVal').textContent=coherence.toFixed(0)+'%';
+    const fill=document.getElementById('t4CoherenceFill');
+    fill.style.width=coherence+'%';
+    const col=coherence<20?'rgba(40,160,255,0.7)':coherence<60?'rgba(255,208,96,0.8)':'rgba(255,80,80,0.8)';
+    fill.style.background=col;
+    fill.style.boxShadow=`0 0 8px ${col}`;
+  }
+
+  // Legend
+  t4ctx.fillStyle='rgba(204,232,255,0.2)'; t4ctx.font='8px DM Mono';
+  t4ctx.fillText('● EXCITATORY',14,H-28);
+  t4ctx.fillText('● INHIBITORY',14,H-16);
+  t4ctx.fillStyle='rgba(40,160,255,0.5)'; t4ctx.fillText('●',14,H-25);
+  t4ctx.fillStyle='rgba(64,255,176,0.5)'; t4ctx.fillText('●',14,H-13);
+
+  t4Time+=0.016;
+}
+function animateT4(){drawT4();t4raf=requestAnimationFrame(animateT4);}
+
+// ============================================================
+//  VOID TOGGLE
+// ============================================================
+let isVoid=true;
+function toggleVoid(){
+  isVoid=!isVoid;
+  document.getElementById('voidBtn').textContent=isVoid?'☽ VOID':'☼ DAY';
+  const r=document.documentElement.style;
+  if(isVoid){
+    r.setProperty('--bg','#020810');
+    r.setProperty('--border','rgba(40,160,255,0.14)');
+    r.setProperty('--text','#cce8ff');
+    r.setProperty('--text-dim','rgba(204,232,255,0.4)');
+    r.setProperty('--accent','#28a0ff');
+    r.setProperty('--glow','rgba(40,160,255,0.12)');
+    document.querySelector('.header').style.background='rgba(2,8,16,0.96)';
+  }else{
+    r.setProperty('--bg','#f0f6ff');
+    r.setProperty('--border','rgba(20,80,180,0.15)');
+    r.setProperty('--text','#0a1830');
+    r.setProperty('--text-dim','rgba(10,24,48,0.5)');
+    r.setProperty('--accent','#1060d0');
+    r.setProperty('--glow','rgba(16,96,208,0.1)');
+    document.querySelector('.header').style.background='rgba(240,246,255,0.96)';
+  }
+}
+
+// ============================================================
+//  TIER SWITCHING
+// ============================================================
+let curTier=1;
+function setTier(n){
+  curTier=n;
+  const labels=['I','II','III','IV'];
+  document.querySelectorAll('.tier-btn').forEach((b,i)=>b.classList.toggle('active',i+1===n));
+  [1,2,3,4].forEach(i=>document.getElementById('tier'+i).classList.toggle('active',i===n));
+  setTimeout(()=>{
+    if(n===1&&t1cvs) resizeT1();
+    if(n===2){if(!t2cvs)initT2();else resizeT2();}
+    if(n===3){if(!t3cvs)initT3();else resizeT3();}
+    if(n===4){if(!t4cvs)initT4();else resizeT4();}
+  },50);
+}
+
+window.addEventListener('load',()=>{
+  initT1();
+  updateT2Readout();
+});
+</script>
+</body>
+</html>
